@@ -8,8 +8,18 @@
 import UIKit
 
 class ViewController: UIViewController {
+  private let repository: SearchRepositoryProtocol
   
-  private lazy var searchController = UISearchController(searchResultsController: nil)
+  init(repository: SearchRepositoryProtocol) {
+    self.repository = repository
+    super.init(nibName: nil, bundle: nil)
+  }
+  
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+  
+  private let searchController = UISearchController(searchResultsController: nil)
   
   private let indicatorView: UIActivityIndicatorView = {
     let indicatorView = UIActivityIndicatorView()
@@ -67,27 +77,6 @@ class ViewController: UIViewController {
     ])
   }
   
-  private func fetchSearchAPI(searchText query: String) {
-    Task.detached { [weak self] in
-      guard let url = URL(string: "https://api.github.com/search/repositories?q=\(query)") else {
-        throw NSError(domain: "Invalid URL", code: 0)
-      }
-      
-      let (data, response) = try await URLSession.shared.data(from: url)
-      guard let httpResponse = (response as? HTTPURLResponse) else {
-        throw NSError(domain: "HttpResponse Error", code: 0)
-      }
-      
-      guard httpResponse.statusCode == 200 else {
-        throw NSError(domain: "StatusCode Error", code: 0)
-      }
-      
-      let searchResult = try JSONDecoder().decode(GitHubSearchResponse.self, from: data)
-      
-      await self?.setItems(searchResult.items)
-    }
-  }
-  
   @MainActor
   private func setItems(_ items: [GitHubSearchItem]) async {
     searchResultItems = items
@@ -109,9 +98,11 @@ extension ViewController: UISearchResultsUpdating {
 extension ViewController: UISearchBarDelegate {
   func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
     if let searchText = searchBar.text {
-      fetchSearchAPI(searchText: searchText)
+      Task.detached { [weak self] in
+        let searchItems = try await self?.repository.fetchSearchAPI(searchText: searchText)
+        await self?.setItems(searchItems ?? [])
+      }
     }
-    
     searchController.dismiss(animated: true)
   }
 }

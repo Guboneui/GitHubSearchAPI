@@ -50,7 +50,8 @@ private extension SceneDelegate {
   func makeWindow(withWindowScene windowScene: UIWindowScene) {
     window = UIWindow(frame: windowScene.coordinateSpace.bounds)
     window?.windowScene = windowScene
-    let rootVC = ViewController()
+    let repository = SearchRepository()
+    let rootVC = ViewController(repository: repository)
     let navi = UINavigationController(rootViewController: rootVC)
     window?.rootViewController = navi
     window?.makeKeyAndVisible()
