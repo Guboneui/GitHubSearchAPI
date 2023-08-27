@@ -40,3 +40,23 @@ final class SearchRepositoryTest: XCTestCase {
     XCTAssertEqual(result?.first!, item)
   }
 }
+
+final class SearchRepositoryImplTest: XCTestCase {
+  
+  private var searchrepository: SearchRepositoryProtocol!
+  
+  override func setUp() {
+    super.setUp()
+    self.searchrepository = SearchRepository()
+  }
+  
+  func testSearch_searchGitHub() async {
+    let result = try? await searchrepository.fetchSearchAPI(searchText: "SnapKit")
+    XCTAssertNotEqual(result?.count ?? 0, 0)
+    XCTAssertEqual(result?.first!.html_url, "https://github.com/SnapKit/SnapKit")
+  }
+}
+
+
+
+
